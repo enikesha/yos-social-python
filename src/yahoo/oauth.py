@@ -168,18 +168,22 @@ class Client(oauthlib.oauth.OAuthClient):
     return self.connection.getresponse().read().strip()
 
   def access_resource(self, oauth_request, body = None):
-    urlData = urlparse.urlparse(oauth_request.get_normalized_http_url())
+    urlData = urlparse.urlparse(oauth_request.to_url())
 
     if urlData.scheme == 'https':
       connection = httplib.HTTPSConnection("%s:443" % urlData.netloc)
     else:
       connection = httplib.HTTPConnection("%s:80" % urlData.netloc)
 
+    path = urlData.path
+    if urlData.query:
+      path += "?" + urlData.query
+
     if oauth_request.http_method == 'GET':
-      connection.request(oauth_request.http_method, oauth_request.to_url())
+      connection.request(oauth_request.http_method, path)
     elif oauth_request.http_method in ('PUT', 'POST', 'DELETE'):
-      connection.request(oauth_request.http_method, oauth_request.to_url(), body=body)
+      connection.request(oauth_request.http_method, path, body=body)
     else:
-      connection.request(oauth_request.http_method, oauth_request.to_url())
+      connection.request(oauth_request.http_method, path)
 
     return connection.getresponse().read().strip()
